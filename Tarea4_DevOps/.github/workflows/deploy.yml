@@ -1,0 +1,157 @@
+name: CI/CD Pipeline - Test 5IG
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: Tarea3_Frontend/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd Tarea3_Frontend
+        npm ci
+        
+    - name: Run linting
+      run: |
+        cd Tarea3_Frontend
+        npm run lint --if-present
+        
+    - name: Run tests
+      run: |
+        cd Tarea3_Frontend
+        npm test -- --watchAll=false --coverage
+        
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: Tarea3_Frontend/coverage/lcov.info
+        flags: frontend
+        name: frontend-coverage
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: Tarea3_Frontend/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd Tarea3_Frontend
+        npm ci
+        
+    - name: Build application
+      run: |
+        cd Tarea3_Frontend
+        npm run build
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: Tarea3_Frontend/build/
+        retention-days: 30
+
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: Tarea3_Frontend/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd Tarea3_Frontend
+        npm ci
+        
+    - name: Build application
+      run: |
+        cd Tarea3_Frontend
+        npm run build
+        
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: Tarea3_Frontend/build
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+      
+    - name: Notify deployment status
+      run: |
+        if [ "${{ steps.deployment.outputs.page_url }}" != "" ]; then
+          echo "✅ Deployment successful!"
+          echo "🌐 Live URL: ${{ steps.deployment.outputs.page_url }}"
+        else
+          echo "❌ Deployment failed!"
+          exit 1
+        fi
+
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [test, build, deploy]
+    if: always()
+    
+    steps:
+    - name: Notify pipeline completion
+      run: |
+        echo "🎉 CI/CD Pipeline completed!"
+        echo "📊 Test Status: ${{ needs.test.result }}"
+        echo "🏗️ Build Status: ${{ needs.build.result }}"
+        echo "🚀 Deploy Status: ${{ needs.deploy.result }}"
+        
+        if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.deploy.result }}" == "success" ]; then
+          echo "✅ All stages passed successfully!"
+        else
+          echo "❌ Some stages failed. Check the logs above."
+          exit 1
+        fi 

@@ -1,0 +1,28 @@
+================================================================================
+                                RELACIONES PRINCIPALES
+================================================================================
+
+1. student  ────► loan 
+   - Un estudiante puede tener múltiples préstamos
+   - Un préstamo pertenece a un solo estudiante
+
+2. book  ────► loan 
+   - Un libro puede ser prestado múltiples veces
+   - Un préstamo corresponde a un solo libro
+
+3. shelf  ────► book 
+   - Un estante puede contener múltiples libros
+   - Un libro está ubicado en un solo estante
+
+4. book  ◄───► category
+   - Un libro puede tener múltiples categorías
+   - Una categoría puede aplicarse a múltiples libros
+   - Relación implementada a través de tabla LIBRO_CATEGORÍA
+
+5. category  ────► libro_categoria (N)
+   - Relación jerárquica (categorías padre-hijo)
+   - Permite crear subcategorías
+
+
+
+================================================================================ 
