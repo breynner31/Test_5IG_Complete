@@ -64,8 +64,11 @@ npm start
 #### Tarea 4 - DevOps y CI/CD
 ```bash
 # El pipeline se ejecuta automáticamente al hacer push
-# Ver configuración en Tarea4_DevOps/.github/workflows/
+# Configuración: .github/workflows/deploy.yml (GitHub Actions)
+# Documentación completa: Tarea4_DevOps/Tarea4_README.md
 ```
+
+
 
 ## Características Técnicas
 

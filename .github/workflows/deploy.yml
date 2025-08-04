@@ -1,0 +1,64 @@
+name: CI/CD Pipeline - Test 5IG
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: Tarea3_Frontend/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd Tarea3_Frontend
+        npm ci
+        
+    - name: Build application
+      run: |
+        cd Tarea3_Frontend
+        npm run build
+        
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: Tarea3_Frontend/build
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+      
+    - name: Notify deployment status
+      run: |
+        if [ "${{ steps.deployment.outputs.page_url }}" != "" ]; then
+          echo "✅ Deployment successful!"
+          echo "🌐 Live URL: ${{ steps.deployment.outputs.page_url }}"
+        else
+          echo "❌ Deployment failed!"
+          exit 1
+        fi 
